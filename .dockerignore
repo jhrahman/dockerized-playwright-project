@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# GitHub
+.github
+
+# Node
+node_modules
+
+# Playwright outputs
+playwright-report
+test-results
+blob-report
+
+# IDE
+.vscode
+.idea
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
