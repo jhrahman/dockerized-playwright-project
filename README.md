@@ -4,13 +4,29 @@
 ![Playwright](https://img.shields.io/badge/Playwright-supported-purple)
 ![TypeScript](https://img.shields.io/badge/TypeScript-enabled-blue)
 
-Simple browser automation built to run in a consistent local or container environment.
+A clean Playwright automation setup with Docker support for reliable local and CI execution.
 
-## Overview
+## Contents
 
-This project uses Playwright for browser automation and Docker to keep the execution environment stable. It is designed to be easy to start, easy to extend, and compatible with GitHub Actions.
+- [About](#about)
+- [Quick Start](#quick-start)
+- [Docker Setup](#docker-setup)
+- [Docker Compose](#docker-compose)
+- [CI / CD](#ci--cd)
+- [Project Structure](#project-structure)
+- [Commands](#commands)
+- [Notes](#notes)
 
-## Getting started
+## About
+
+This repository uses Playwright for browser automation and Docker to make the runtime reproducible. It is built so the same configuration works locally and in CI.
+
+---
+![Dockerized Playwright Automation](./dockerized-playwright.svg)
+
+
+
+## Quick Start
 
 ### Local setup
 
@@ -22,54 +38,125 @@ This project uses Playwright for browser automation and Docker to keep the execu
    ```bash
    npx playwright install --with-deps
    ```
-3. Run the automation suite:
+3. Run the automation:
    ```bash
    npx playwright test
    ```
 
-### Docker setup
+### When to use Docker
 
-Use Docker when you want the same environment on every machine:
+Use Docker when you want a consistent environment across machines, or when you want to mirror CI behavior locally.
 
-```bash
-docker compose up --build
-```
+## Docker Setup
 
-This builds the Docker image, installs dependencies, and runs the automation inside the container.
+Docker packages the application together with the OS, Node.js, Playwright, and dependencies.
 
-## Project structure
+### What Docker means in this project
 
-- `playwright.config.ts` — main Playwright configuration
-- `tests/` — automation scenarios and test cases
-- `pages/` — page object files and reusable UI helpers
-- `utils/` — utilities and data generation helpers
-- `docker-compose.yml` — Docker service definition for local container execution
-- `Dockerfile.dev` — development Docker image setup
-- `.github/workflows/playwright.yml` — GitHub Actions CI workflow
+- `Dockerfile` is intended for CI.
+  - Builds the image
+  - Installs dependencies
+  - Runs Playwright tests and exits
+- `Dockerfile.dev` is intended for local development.
+  - Builds the same environment
+  - Keeps the container running so tests can be executed without rebuilding
+- A bind mount syncs the host project folder with `/app` inside the container.
 
-## Key ideas
+### Common Docker commands
 
-- Uses a shared base URL and browser settings for consistency
-- Captures failure artifacts like screenshots and video only when needed
-- Generates an HTML report in `playwright-report`
-- Supports local and CI execution with the same setup
+- Build an image:
+  ```bash
+  docker build -t playwright-test-image .
+  ```
+- Run the image:
+  ```bash
+  docker run --rm \
+    -v "${PWD}/playwright-report:/app/playwright-report" \
+    -v "${PWD}/test-results:/app/test-results" \
+    playwright-test-image
+  ```
+- List running containers:
+  ```bash
+  docker ps
+  ```
+- Remove an image:
+  ```bash
+  docker rmi playwright-test-image
+  ```
+
+## Docker Compose
+
+Docker Compose makes it easier to manage the local development container.
+
+### What `docker-compose.yml` does
+
+- Builds the image from `Dockerfile.dev`
+- Starts the development container
+- Mounts the project folder into `/app`
+- Keeps the container running until stopped
+
+### Common Docker Compose commands
+
+- Build and start services:
+  ```bash
+  docker compose up -d
+  ```
+- Stop and remove all services:
+  ```bash
+  docker compose down
+  ```
+- Stop services without removing them:
+  ```bash
+  docker compose stop
+  ```
+- Start previously stopped services:
+  ```bash
+  docker compose start
+  ```
+- Show Compose-managed containers:
+  ```bash
+  docker compose ps
+  ```
+- View service logs:
+  ```bash
+  docker compose logs
+  ```
+- Execute a command inside a running service:
+  ```bash
+  docker compose exec playwright <command>
+  ```
+
+### Rule of thumb
+
+- Use Docker for individual image builds and container runs.
+- Use Docker Compose to manage services and simplify local development.
 
 ## CI / CD
 
-This repository already includes a GitHub Actions workflow at `.github/workflows/playwright.yml`.
+A GitHub Actions workflow is included at `.github/workflows/playwright.yml`.
 
-The workflow:
+The pipeline:
 
-- checks out the code
+- checks out the repository
 - builds the Docker image
-- runs Playwright inside the container
-- uploads HTML reports and test artifacts
+- runs Playwright tests inside the container
+- uploads HTML report and test artifacts
 
-Use `CI=true` in environments where you want Playwright to enforce CI-mode behavior.
+Use `CI=true` in CI environments to enable Playwright CI behavior.
 
-## Useful commands
+## Project Structure
 
-- Execute the full suite locally:
+- `playwright.config.ts` — Playwright configuration and runner settings
+- `tests/` — automation scenarios and test cases
+- `pages/` — page objects and reusable UI helpers
+- `utils/` — helper functions and test data utilities
+- `docker-compose.yml` — local development Compose file
+- `Dockerfile.dev` — development Docker image recipe
+- `.github/workflows/playwright.yml` — GitHub Actions workflow
+
+## Commands
+
+- Run the full suite locally:
   ```bash
   npx playwright test
   ```
@@ -77,15 +164,22 @@ Use `CI=true` in environments where you want Playwright to enforce CI-mode behav
   ```bash
   npx playwright test --project=chromium
   ```
-- View the test report:
+- Open the HTML report:
   ```bash
   npx playwright show-report
+  ```
+- Start local development container:
+  ```bash
+  docker compose up -d
+  ```
+- Stop and remove local container:
+  ```bash
+  docker compose down
   ```
 
 ## Notes
 
 - The Docker setup is based on Node.js 22.
-- The test environment is intended to be reproducible across machines.
-- Updating the workflow or Docker config keeps the same behavior in local and CI runs.
+- The project captures screenshots, video, and trace on failure.
+- The Docker and CI configuration are aligned for consistent execution.
 
-If you want to experiment with new automation flows, this setup gives you a clean base to build from.
