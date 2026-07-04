@@ -1,0 +1,23 @@
+FROM mcr.microsoft.com/playwright:v1.61.1-noble
+
+WORKDIR /app
+
+# Copy dependency files first for better Docker layer caching
+COPY package*.json ./
+
+# Install project dependencies
+RUN npm ci
+
+# Install Java Runtime (required by Allure CLI)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openjdk-21-jre-headless && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Allure CLI
+RUN npm install -g allure-commandline
+
+# Copy application source
+COPY . .
+
+# Default command (can be overridden by docker run)
+CMD ["npx", "playwright", "test"]
