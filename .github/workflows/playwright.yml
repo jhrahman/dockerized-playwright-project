@@ -9,30 +9,52 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   playwright-tests:
     runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        run: docker build -t playwright-test-image .
+      - name: Set up GitHub Pages
+        uses: actions/configure-pages@v5
 
-      - name: Run Playwright Tests
+      - name: Build and Run Playwright Tests
+        id: tests
+        continue-on-error: true
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}/playwright-report:/app/playwright-report \
-            -v ${{ github.workspace }}/test-results:/app/test-results \
-            playwright-test-image
+          docker compose -f docker-compose.ci.yml up --build
 
-      - name: Upload HTML Report
+      - name: Generate Allure Report
+        if: always()
+        run: |
+          docker compose -f docker-compose.ci.yml run --rm \
+            playwright \
+            allure generate allure-results --clean -o allure-report
+
+      - name: Upload Playwright HTML Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-html-report
           path: playwright-report/
+
+      - name: Upload Allure Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: allure-report/
 
       - name: Upload Test Results (Trace, Screenshots, Videos)
         if: always()
@@ -40,3 +62,18 @@ jobs:
         with:
           name: playwright-test-results
           path: test-results/
+
+      - name: Upload GitHub Pages Artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: allure-report/
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Fail Workflow if Tests Failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
