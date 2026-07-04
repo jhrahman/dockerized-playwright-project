@@ -1,9 +1,9 @@
 # Dockerized Playwright Automation
 
-![Docker](https://img.shields.io/badge/Docker-ready-blue)
-![Playwright](https://img.shields.io/badge/Playwright-supported-purple)
-![TypeScript](https://img.shields.io/badge/TypeScript-enabled-blue)
-[![Allure Report](https://img.shields.io/badge/Allure_Report-View-blue?logo=allure)](https://jhrahman.github.io/dockerized-playwright-project/)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-supported-2EAD33?logo=playwright&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-enabled-3178C6?logo=typescript&logoColor=white)
+[![Allure Report](https://img.shields.io/badge/Allure_Report-View-CE70CA?logo=allure&logoColor=white)](https://jhrahman.github.io/dockerized-playwright-project/)
 
 A clean Playwright automation setup with Docker support for reliable local and CI execution.
 
