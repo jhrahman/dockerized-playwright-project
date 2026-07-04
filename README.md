@@ -24,7 +24,7 @@ A clean Playwright automation setup with Docker support for reliable local and C
 
 This repository uses Playwright for browser automation and Docker to make the runtime reproducible. It is built so the same configuration works locally and in CI.
 
----
+
 ![Dockerized Playwright Automation](./dockerized-playwright.svg)
 
 
