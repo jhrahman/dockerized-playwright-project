@@ -1,5 +1,4 @@
 const fs = require("fs");
-const axios = require("axios");
 
 // ----------------------------------------
 // Read Playwright JSON report
@@ -154,17 +153,25 @@ const embed = {
 // Send Notification
 // ----------------------------------------
 
-axios
-  .post(webhook, {
-    embeds: [embed]
-  })
-  .then(() => {
+(async () => {
+  try {
+    const response = await fetch(webhook, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        embeds: [embed],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
     console.log("Discord notification sent.");
-  })
-  .catch((error) => {
-
-    console.error(error.response?.data || error.message);
-
+  } catch (error) {
+    console.error(error);
     process.exit(1);
-
-  });
+  }
+})();
