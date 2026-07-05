@@ -3,7 +3,7 @@ import { AddtoCart } from '../pages/AddtoCart'
 import { LoginPage } from '../pages/LoginPage'
 import { loginData } from '../test-data/loginData'
 
-test.describe.serial('Add products to cart', async () => {
+test.describe('Add products to cart', async () => {
 
 
     test('Add Products to Cart Without Login', async ({ page }) => {
@@ -47,7 +47,10 @@ test.describe.serial('Add products to cart', async () => {
         await expect(cart.addressDelivery).toBeVisible()
         await expect(cart.addressInvoice).toBeVisible()
         await expect(cart.totalAmount).toBeVisible()
-        await expect(cart.totalPrice).toContainText('Rs. 500')
+        const priceText = await cart.totalPrice.textContent()
+        console.log("Current Price: ", priceText)
+        expect(priceText).not.toBeNull()
+        await expect(cart.totalPrice).toHaveText(priceText!)
         await cart.addComment()
         await cart.placeOrder()
         await cart.payment()

@@ -49,7 +49,7 @@ export class AddtoCart{
         this.addressDelivery = page.locator("#address_delivery")
         this.addressInvoice = page.locator("#address_invoice")
         this.totalAmount = page.locator("//h4//b")
-        this.totalPrice = page.locator("(//*[@class='cart_total_price'])[2]")
+        this.totalPrice = page.locator("//h4[normalize-space()='Total Amount']/ancestor::tr//p[@class='cart_total_price']")
         this.message = page.locator("//textarea[@name='message']")
         this.placeOrderButton = page.locator("//a[normalize-space()='Place Order']")
         this.cardName = page.locator("//input[@name='name_on_card']")
