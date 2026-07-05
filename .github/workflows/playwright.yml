@@ -9,6 +9,10 @@ on:
 
   workflow_dispatch:
 
+  schedule:
+    # Every Monday at 3:00 PM Bangladesh (09:00 UTC)
+    - cron: '0 9 * * 1'
+
 permissions:
   contents: read
   pages: write
@@ -31,26 +35,26 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      # Build the Docker image
+      # Build CI Docker image
       - name: Build Docker Image
         run: |
           docker build -f Dockerfile.ci -t playwright-test-image .
 
-      # Create a container but don't remove it afterwards.
-      # We need it so we can copy reports from it.
+      # Create test container
       - name: Create Test Container
         run: |
           docker create --name playwright-test-container playwright-test-image
 
-      # Run Playwright tests.
-      # continue-on-error lets the workflow continue even if tests fail.
+      # Run Playwright tests
+      # continue-on-error allows the workflow to continue so
+      # reports and notifications are still generated.
       - name: Run Playwright Tests
         id: tests
         continue-on-error: true
         run: |
           docker start -a playwright-test-container
 
-      # Copy generated reports from the stopped container.
+      # Copy reports from the stopped container
       - name: Copy Test Artifacts
         if: always()
         run: |
@@ -58,15 +62,13 @@ jobs:
           docker cp playwright-test-container:/app/playwright-report ./playwright-report
           docker cp playwright-test-container:/app/test-results ./test-results
 
-      # Remove the container now that we've copied everything.
+      # Clean up container
       - name: Remove Test Container
         if: always()
         run: |
           docker rm playwright-test-container
 
-      # Generate Allure HTML using a fresh temporary container.
-      # The current workspace is mounted so the report is written
-      # back to the GitHub runner.
+      # Generate Allure HTML report
       - name: Generate Allure Report
         if: always()
         run: |
@@ -76,7 +78,7 @@ jobs:
             playwright-test-image \
             allure generate allure-results --clean -o allure-report
 
-      # Upload Playwright HTML report
+      # Upload Playwright HTML Report
       - name: Upload Playwright HTML Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -84,7 +86,7 @@ jobs:
           name: playwright-html-report
           path: playwright-report
 
-      # Upload Allure HTML report
+      # Upload Allure Report
       - name: Upload Allure Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -100,19 +102,31 @@ jobs:
           name: playwright-test-results
           path: test-results
 
-      # Publish the latest Allure report to GitHub Pages
+      # Publish latest Allure report to GitHub Pages
       - name: Upload GitHub Pages Artifact
         if: always()
         uses: actions/upload-pages-artifact@v3
         with:
           path: allure-report
 
+      # Deploy GitHub Pages
       - name: Deploy to GitHub Pages
         if: always()
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # Make the workflow fail if Playwright tests failed
+      # Send Discord notification
+      # Runs after GitHub Pages deployment so the latest report URL is included.
+      - name: Send Discord Notification
+        if: always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.TEST_APP }}
+          REPORT_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          node scripts/discord-summary.js
+
+      # Mark workflow as failed if Playwright tests failed.
+      # Keep this LAST so reports and notifications are still available.
       - name: Fail Workflow if Tests Failed
         if: steps.tests.outcome == 'failure'
         run: exit 1
